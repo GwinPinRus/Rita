@@ -1,3 +1,4 @@
+/* eslint-disable quote-props */
 // -----------------
 // Global variables
 // -----------------
@@ -17,9 +18,10 @@ exports.server_obj = server_obj;
 // Database Auth Process
 // ----------------------
 
-console.log("DEBUG: Pre Stage Database Auth Process");
+// console.log("DEBUG: Pre Stage Database Auth Process");
 const db = process.env.DATABASE_URL.endsWith(".db") ?
    new Sequelize({
+      logging: false,
       "dialect": "sqlite",
       "dialectOptions": {
          "ssl": {
@@ -27,19 +29,20 @@ const db = process.env.DATABASE_URL.endsWith(".db") ?
             "rejectUnauthorized": false
          }
       },
+      logging: false,
       "storage": process.env.DATABASE_URL
    }) :
    new Sequelize(
       process.env.DATABASE_URL,
       {
-         "logging": console.log,
+         logging: false,
          "dialectOptions": {
             "ssl": {
                "require": true,
                "rejectUnauthorized": false
             }
-         }
-      // Logging: null,
+         },
+         logging: false
       }
    );
 
@@ -68,7 +71,7 @@ db.
 // Database stats table definition
 // ---------------------------------
 
-console.log("DEBUG: Pre Stage Database stats table definition");
+// console.log("DEBUG: Pre Stage Database stats table definition");
 const Stats = db.define(
    "stats",
    {
@@ -113,7 +116,7 @@ const Stats = db.define(
 // Database server table definition
 // ---------------------------------
 
-console.log("DEBUG: Pre Stage Database server table definition");
+// console.log("DEBUG: Pre Stage Database server table definition");
 const Servers = db.define(
    "servers",
    {
@@ -152,6 +155,14 @@ const Servers = db.define(
       "webhookactive": {
          "type": Sequelize.BOOLEAN,
          "defaultValue": false
+      },
+      "blacklisted": {
+         "type": Sequelize.BOOLEAN,
+         "defaultValue": false
+      },
+      "warn": {
+         "type": Sequelize.BOOLEAN,
+         "defaultValue": false
       }
    }
 );
@@ -160,7 +171,7 @@ const Servers = db.define(
 // Database tasks table definition
 // --------------------------------
 
-console.log("DEBUG: Pre Stage Database tasks table definition");
+// console.log("DEBUG: Pre Stage Database tasks table definition");
 const Tasks = db.define(
    "tasks",
    {
@@ -205,18 +216,21 @@ const Tasks = db.define(
 exports.initializeDatabase = async function initializeDatabase (client)
 {
 
-   console.log("DEBUG: Stage Init/create tables - Pre Sync");
-   db.sync({"logging": console.log}).then(async () =>
+   // console.log("DEBUG: Stage Init/create tables - Pre Sync");
+   db.sync({logging: false}).then(async () =>
    {
 
-      Stats.upsert({"id": "bot"});
+      await Stats.upsert({logging: false,
+         "id": "bot"});
       await this.updateColumns();
-      Servers.upsert({"id": "bot",
+      // console.log("DEBUG: New columns should be added Before this point.");
+      await Servers.upsert({logging: false,
+         "id": "bot",
          "lang": "en"});
-      console.log("DEBUG: New columns should be added Before this point.");
       db.getQueryInterface().removeIndex(
          "tasks",
-         "tasks_origin_dest"
+         "tasks_origin_dest",
+         {logging: false}
       );
       const guilds = client.guilds.cache.array().length;
       const guildsArray = client.guilds.cache.array();
@@ -226,25 +240,30 @@ exports.initializeDatabase = async function initializeDatabase (client)
 
          const guild = guildsArray[i];
          const guildID = guild.id;
-         Stats.upsert({"id": guildID});
-         Servers.findAll({"where": {"id": guildID}}).then((projects) =>
+         // eslint-disable-next-line no-await-in-loop
+         await Stats.upsert({"id": guildID,
+            logging: false});
+         Servers.findAll({logging: false,
+            "where": {"id": guildID}}).then((projects) =>
          {
 
             if (projects.length === 0)
             {
 
-               console.log("DEBUG: Add Server");
-               Servers.upsert({"id": guildID,
+               // console.log("DEBUG: Add Server");
+               Servers.upsert({logging: false,
+                  "id": guildID,
                   "lang": "en"});
-               Stats.upsert({"id": guildID});
+               Stats.upsert({logging: false,
+                  "id": guildID});
 
             }
 
          });
 
       }
-      console.log("DEBUG: Stage Init/create tables - Pre servers FindAll");
-      const serversFindAll = await Servers.findAll();
+      // console.log("DEBUG: Stage Init/create tables - Pre servers FindAll");
+      const serversFindAll = await Servers.findAll({logging: false});
       // {
       for (let i = 0; i < serversFindAll.length; i += 1)
       {
@@ -260,7 +279,7 @@ exports.initializeDatabase = async function initializeDatabase (client)
          }
 
       }
-      console.log("DEBUG: Stage Init/create tables - Pre guildClient");
+      // console.log("DEBUG: Stage Init/create tables - Pre guildClient");
       const guildClient = Array.from(client.guilds.cache.values());
       for (let i = 0; i < guildClient.length; i += 1)
       {
@@ -291,7 +310,7 @@ exports.initializeDatabase = async function initializeDatabase (client)
 exports.addServer = async function addServer (id, lang)
 {
 
-   console.log("DEBUG: Stage Add Server to Database");
+   // console.log("DEBUG: Stage Add Server to Database");
    server_obj[id] = {
       "db": {
          "embedstyle": "on",
@@ -302,7 +321,8 @@ exports.addServer = async function addServer (id, lang)
          "prefix": "!tr"
       }
    };
-   await Servers.findAll({"where": {id}}).then((server) =>
+   await Servers.findAll({logging: false,
+      "where": {id}}).then((server) =>
    {
 
       if (server.length === 0)
@@ -313,13 +333,23 @@ exports.addServer = async function addServer (id, lang)
             lang,
             "prefix": "!tr"
          });
-         Stats.create({
-            id
-         });
+         Stats.create({logging: false,
+            id});
 
       }
 
    });
+
+};
+
+// ------------------
+// Add server member count
+// ------------------
+
+exports.servercount = function servercount (guild)
+{
+
+   server_obj.size += guild.memberCount;
 
 };
 
@@ -330,7 +360,7 @@ exports.addServer = async function addServer (id, lang)
 exports.removeServer = function removeServer (id)
 {
 
-   console.log("DEBUG: Stage Deactivate Server");
+   // console.log("DEBUG: Stage Deactivate Server");
    return Servers.update(
       {"active": false},
       {"where": {id}}
@@ -345,7 +375,7 @@ exports.removeServer = function removeServer (id)
 exports.updateServerLang = function updateServerLang (id, lang, _cb)
 {
 
-   console.log("DEBUG: Stage Update Server Lang");
+   // console.log("DEBUG: Stage Update Server Lang");
    return Servers.update(
       {lang},
       {"where": {id}}
@@ -365,7 +395,7 @@ exports.updateServerLang = function updateServerLang (id, lang, _cb)
 exports.updateEmbedVar = function updateEmbedVar (id, embedstyle, _cb)
 {
 
-   console.log("DEBUG: Stage Update Embedded Variable in DB");
+   // console.log("DEBUG: Stage Update Embedded Variable in DB");
    server_obj[id].db.embedstyle = embedstyle;
    return Servers.update(
       {embedstyle},
@@ -386,7 +416,7 @@ exports.updateEmbedVar = function updateEmbedVar (id, embedstyle, _cb)
 exports.updateBot2BotVar = function updateBot2BotVar (id, bot2botstyle, _cb)
 {
 
-   console.log("DEBUG: Stage Update Bot2Bot Variable In DB");
+   // console.log("DEBUG: Stage Update Bot2Bot Variable In DB");
    server_obj[id].db.bot2botstyle = bot2botstyle;
    return Servers.update(
       {bot2botstyle},
@@ -407,7 +437,7 @@ exports.updateBot2BotVar = function updateBot2BotVar (id, bot2botstyle, _cb)
 exports.updateWebhookVar = function updateWebhookVar (id, webhookid, webhooktoken, webhookactive, _cb)
 {
 
-   console.log("DEBUG: Stage Update webhookID & webhookToken Variable In DB");
+   // console.log("DEBUG: Stage Update webhookID & webhookToken Variable In DB");
 
    return Servers.update(
       {webhookid,
@@ -430,7 +460,7 @@ exports.updateWebhookVar = function updateWebhookVar (id, webhookid, webhooktoke
 exports.removeWebhook = function removeWebhook (id, _cb)
 {
 
-   console.log("DEBUG: Stage Deactivate debug Webhook");
+   // console.log("DEBUG: Stage Deactivate debug Webhook");
    return Servers.update(
       {"webhookactive": false},
       {"where": {id}}
@@ -443,6 +473,47 @@ exports.removeWebhook = function removeWebhook (id, _cb)
 
 };
 
+// -----------------
+// Blacklist Server
+// -----------------
+
+exports.blacklist = function blacklist (id, type, _cb)
+{
+
+   // console.log("DEBUG: Stage Blacklist");
+   return Servers.update(
+      {"blacklisted": type},
+      {"where": {id}}
+   ).then(function update ()
+   {
+
+      _cb();
+
+   });
+
+};
+
+// ------------
+// Warn Server
+// ------------
+
+exports.warn = function warn (id, type, _cb)
+{
+
+   console.log("DEBUG: Stage Warn");
+   return Servers.update(
+      {"warn": type},
+      {"where": {id}}
+   ).then(function update ()
+   {
+
+      _cb();
+
+   });
+
+};
+
+
 // --------------
 // Update prefix
 // --------------
@@ -450,7 +521,7 @@ exports.removeWebhook = function removeWebhook (id, _cb)
 exports.updatePrefix = function updatePrefix (id, prefix, _cb)
 {
 
-   console.log("DEBUG: Stage Update prefix");
+   // console.log("DEBUG: Stage Update prefix");
    dbNewPrefix = prefix;
    server_obj[id].db.prefix = dbNewPrefix;
    return Servers.update(
@@ -472,7 +543,7 @@ exports.updatePrefix = function updatePrefix (id, prefix, _cb)
 exports.updateColumns = async function updateColumns ()
 {
 
-   console.log("DEBUG: Stage Add Missing Variable Columns");
+   // console.log("DEBUG: Stage Add Missing Variable Columns");
    // Very sloppy code, neew to find a better fix.
    await db.getQueryInterface().describeTable("servers").
       then((tableDefinition) =>
@@ -481,7 +552,7 @@ exports.updateColumns = async function updateColumns ()
          if (!tableDefinition.prefix)
          {
 
-            console.log("DEBUG:-------------> Adding prefix column");
+            // console.log("DEBUG:-------------> Adding prefix column");
             db.getQueryInterface().addColumn(
                "servers",
                "prefix",
@@ -493,7 +564,7 @@ exports.updateColumns = async function updateColumns ()
          if (!tableDefinition.embedstyle)
          {
 
-            console.log("DEBUG:-------------> Adding embedstyle column");
+            // console.log("DEBUG:-------------> Adding embedstyle column");
             db.getQueryInterface().addColumn(
                "servers",
                "embedstyle",
@@ -505,7 +576,7 @@ exports.updateColumns = async function updateColumns ()
          if (!tableDefinition.bot2botstyle)
          {
 
-            console.log("DEBUG:-------------> Adding bot2botstyle column");
+            // console.log("DEBUG:-------------> Adding bot2botstyle column");
             db.getQueryInterface().addColumn(
                "servers",
                "bot2botstyle",
@@ -517,7 +588,7 @@ exports.updateColumns = async function updateColumns ()
          if (!tableDefinition.webhookid)
          {
 
-            console.log("DEBUG:-------------> Adding webhookid column");
+            // console.log("DEBUG:-------------> Adding webhookid column");
             db.getQueryInterface().addColumn(
                "servers",
                "webhookid",
@@ -528,7 +599,7 @@ exports.updateColumns = async function updateColumns ()
          if (!tableDefinition.webhooktoken)
          {
 
-            console.log("DEBUG:-------------> Adding webhooktoken column");
+            // console.log("DEBUG:-------------> Adding webhooktoken column");
             db.getQueryInterface().addColumn(
                "servers",
                "webhooktoken",
@@ -539,10 +610,34 @@ exports.updateColumns = async function updateColumns ()
          if (!tableDefinition.webhookactive)
          {
 
-            console.log("DEBUG:-------------> Adding webhookactive column");
+            // console.log("DEBUG:-------------> Adding webhookactive column");
             db.getQueryInterface().addColumn(
                "servers",
                "webhookactive",
+               {"type": Sequelize.BOOLEAN,
+                  "defaultValue": false}
+            );
+
+         }
+         if (!tableDefinition.blacklisted)
+         {
+
+            // console.log("DEBUG:-------------> Adding blacklisted column");
+            db.getQueryInterface().addColumn(
+               "servers",
+               "blacklisted",
+               {"type": Sequelize.BOOLEAN,
+                  "defaultValue": false}
+            );
+
+         }
+         if (!tableDefinition.warn)
+         {
+
+            // console.log("DEBUG:-------------> Adding warn column");
+            db.getQueryInterface().addColumn(
+               "servers",
+               "warn",
                {"type": Sequelize.BOOLEAN,
                   "defaultValue": false}
             );
@@ -563,7 +658,7 @@ exports.updateColumns = async function updateColumns ()
 exports.channelTasks = function channelTasks (data)
 {
 
-   console.log("DEBUG: Stage Get Channel Tasks");
+   // console.log("DEBUG: Stage Get Channel Tasks");
    let id = data.message.channel.id;
    if (data.message.channel.type === "dm")
    {
@@ -575,8 +670,9 @@ exports.channelTasks = function channelTasks (data)
    {
 
       // eslint-disable-next-line no-unused-vars
-      const taskList = Tasks.findAll({"where": {"origin": id,
-         "active": true}}).then(function res (result)
+      const taskList = Tasks.findAll({logging: false,
+         "where": {"origin": id,
+            "active": true}}).then(function res (result)
       {
 
          data.rows = result;
@@ -606,7 +702,7 @@ exports.channelTasks = function channelTasks (data)
 exports.getTasks = function getTasks (origin, dest, cb)
 {
 
-   console.log("DEBUG: Stage Get tasks for channel or user");
+   // console.log("DEBUG: Stage Get tasks for channel or user");
    if (dest === "me")
    {
 
@@ -647,7 +743,7 @@ exports.getTasks = function getTasks (origin, dest, cb)
 exports.checkTask = function checkTask (origin, dest, cb)
 {
 
-   console.log("DEBUG: Stage Check if dest is found in tasks");
+   // console.log("DEBUG: Stage Check if dest is found in tasks");
    if (dest === "all")
    {
 
@@ -688,11 +784,11 @@ exports.checkTask = function checkTask (origin, dest, cb)
 exports.removeTask = function removeTask (origin, dest, cb)
 {
 
-   console.log("DEBUG: Stage Remove Channel Task");
+   // console.log("DEBUG: Stage Remove Channel Task");
    if (dest === "all")
    {
 
-      console.log("DEBUG: removeTask() - all");
+      // console.log("DEBUG: removeTask() - all");
       return Tasks.destroy({"where": {[Op.or]: [
          {origin},
          {"dest": origin}
@@ -731,7 +827,7 @@ exports.removeTask = function removeTask (origin, dest, cb)
 exports.getTasksCount = function getTasksCount (origin, cb)
 {
 
-   console.log("DEBUG: Get Task Count");
+   // console.log("DEBUG: Get Task Count");
    return Tasks.count({"where": {origin}}).then((c) =>
    {
 
@@ -751,7 +847,7 @@ exports.getTasksCount = function getTasksCount (origin, cb)
 exports.getServersCount = function getServersCount ()
 {
 
-   console.log("DEBUG: Stage Get Servers Count");
+   // console.log("DEBUG: Stage Get Servers Count");
    return server_obj.length();
 
 };
@@ -763,7 +859,7 @@ exports.getServersCount = function getServersCount ()
 exports.addTask = function addTask (task)
 {
 
-   console.log("DEBUG: Stage Add Task");
+   // console.log("DEBUG: Stage Add Task");
    task.dest.forEach((dest) =>
    {
 
@@ -808,10 +904,11 @@ exports.addTask = function addTask (task)
 exports.increaseServersCount = function increaseServersCount (id)
 {
 
-   console.log("DEBUG: Stage Update count in Servers table");
+   // console.log("DEBUG: Stage Update count in Servers table");
    return Servers.increment(
       "count",
-      {"where": {id}}
+      {logging: false,
+         "where": {id}}
    );
 
 };
@@ -819,10 +916,11 @@ exports.increaseServersCount = function increaseServersCount (id)
 exports.increaseStatsCount = function increaseStatsCount (col, id)
 {
 
-   console.log("DEBUG: Stage Update counts in stats table");
+   // console.log("DEBUG: Stage Update counts in stats table");
    return Stats.increment(
       col,
-      {"where": {id}}
+      {logging: false,
+         "where": {id}},
    );
 
 };
@@ -834,7 +932,7 @@ exports.increaseStatsCount = function increaseStatsCount (col, id)
 exports.getStats = function getStats (callback)
 {
 
-   console.log("DEBUG: Stage Get bot stats");
+   // console.log("DEBUG: Stage Get bot stats");
    return db.query(
       `select * from (select sum(count) as "totalCount", ` +
   `count(id)-1 as "totalServers" from servers) as table1, ` +
@@ -844,14 +942,8 @@ exports.getStats = function getStats (callback)
   `from tasks where active = TRUE) as table4, ` +
   `(select count(distinct origin) as "activeUserTasks" ` +
   `from tasks where active = TRUE and origin like '@%') as table5,` +
-  `(select message as "message" from stats where id = 'bot') as table6,` +
-  `(select translation as "translation" from stats where id = 'bot') as table7,` +
-  `(select embedon as "embedon" from stats where id = 'bot') as table8,` +
-  `(select embedoff as "embedoff" from stats where id = 'bot') as table9, ` +
-  `(select images as "images" from stats where id = 'bot') as table10, ` +
-  `(select react as "react" from stats where id = 'bot') as table11, ` +
-  `(select gif as "gif" from stats where id = 'bot') as table12;`,
-      {"type": Sequelize.QueryTypes.SELECT}
+  `(select * from stats where id = 'bot') as table6;`,
+      {"type": Sequelize.QueryTypes.SELECT},
    ).
       then(
          (result) => callback(result),
@@ -871,26 +963,15 @@ exports.getStats = function getStats (callback)
 exports.getServerInfo = function getServerInfo (id, callback)
 {
 
-   console.log("DEBUG: Stage Get server info");
+   // console.log("DEBUG: Stage Get server info");
    return db.query(`select * from (select count as "count",` +
    `lang as "lang" from servers where id = ?) as table1,` +
    `(select count(distinct origin) as "activeTasks"` +
    `from tasks where server = ?) as table2,` +
    `(select count(distinct origin) as "activeUserTasks"` +
    `from tasks where origin like '@%' and server = ?) as table3, ` +
-   `(select embedstyle as "embedstyle" from servers where id = ?) as table4, ` +
-   `(select bot2botstyle as "bot2botstyle" from servers where id = ?) as table5, ` +
-   `(select webhookactive as "webhookactive" from servers where id = ?) as table6,` +
-   `(select webhookid as "webhookid" from servers where id = ?) as table7,` +
-   `(select webhooktoken as "webhooktoken" from servers where id = ?) as table8,` +
-   `(select prefix as "prefix" from servers where id = ?) as table9,` +
-   `(select message as "message" from stats where id = ?) as table10,` +
-   `(select translation as "translation" from stats where id = ?) as table11,` +
-   `(select embedon as "embedon" from stats where id = ?) as table12, ` +
-   `(select embedoff as "embedoff" from stats where id = ?) as table13, ` +
-   `(select images as "images" from stats where id = ?) as table14, ` +
-   `(select react as "react" from stats where id = ?) as table15, ` +
-   `(select gif as "gif" from stats where id = ?) as table16;`, {"replacements": [ id, id, id, id, id, id, id, id, id, id, id, id, id, id, id, id],
+   `(select * from stats where id = ?) as table4, ` +
+   `(select * from servers where id = ?) as table5; `, {"replacements": [ id, id, id, id, id],
       "type": db.QueryTypes.SELECT}).
       then(
          (result) => callback(result),
@@ -906,7 +987,7 @@ exports.getServerInfo = function getServerInfo (id, callback)
 exports.close = function close ()
 {
 
-   console.log("DEBUG: Stage Close DB");
+   // console.log("DEBUG: Stage Close DB");
    return db.close();
 
 };

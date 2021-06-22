@@ -1,5 +1,57 @@
-## 1.2.2 Change Log
+## 1.2.4 Change Log
+* BIG ANNOUNCEMENT - RITA IS NOW VERIFIED
+
+* With the introduction of Version 1.2.4, we have added in a bunch of new commands. 
+* We have now been Verified, so you can invite RITA by going to https://ritabot.gg/invite
+
+### 1.2.4 Major Changes
+* Dev only Command handler has been added in to enable fast changes to command restrictions. 
+
+### 1.2.4 Bug Fixes
+* Lots of little things, nothing of consequence. 
  
+### 1.2.4 Command Changes
+* `!tr history` shows Development History of the bot.
+* `!tr stats server [ServerID]` shows stats for the targets server.
+* `!tr blacklist [ServerID]` Blacklists a server (Developers Only).
+* `!tr unblacklist [ServerID]` un-Blacklists a server (Developers Only).
+* `!tr warn [ServerID]` Warns a server (Developers Only).
+* `!tr unwarn [ServerID]` un-Warns a server (Developers Only).
+* `!tr eject [ServerID]` Removes RITA from the target server (Developers Only).
+* `!tr check [ServerID]` Checks Warn & Blacklist status of the given server.
+* `!tr checkperms [bot/user]` checks permissions of the bot and the user for RITA compatibility.
+ 
+### 1.2.4 Database Changes
+* A new column has been added to manage blacklisting and Warning, backwards compatible to all previous versions.
+ 
+### 1.2.4 Misc. Changes
+* Once again Zycore broke something (a lot of times) Zycore fixed it again.
+* Help muenus update with new commands.
+* Help menus has been reworked, Still a work in progress but they look much better now. 
+
+## 1.2.3 Change Log
+* With the introduction of Version 1.2.3, we have updated the translate API. This is still the same as before but its now providing a much better accuracy rate than before.
+* We are still waiting for Discord to Verify RITA, so for now we are limited to 100 servers, We are at that limit at the moment so keep and eye out for the little blue tick, Once you see it you can invite RITA to your server. Please join our discord for more info. https://discord.gg/AtJcjvnkg6
+
+### 1.2.3 Major Changes
+* Environment changes - `MESSAGE_DEBUG` - For servers that want to show debug message content to find out what pesky message is causing that error, set this to 1. By Default it is 0. Rita global bot is also 0 and will remain that way.
+
+### 1.2.3 Bug Fixes
+* With the changes to the `google-translate-api` it dug up a load of new bugs, Lazarus & EDW have been hard at work fixing them, (DM Lazarus to say thank you, he will love it.)
+* @everyone & @here will now also be conveyed across channels correctly.
+* Emojis, roles and user pings will now function as intended. With a new system used to manage and correct them
+ 
+### 1.2.3 Command Changes 
+* `!tr stats global` / `!tr stats server` now show message based stats, take a look. 
+ 
+### 1.2.3 Database Changes
+* It working so were not going to touch it. (Well Zycore wont)
+ 
+### 1.2.3 Misc Changes
+* Zycore broke something (alot of times) Zycore fixed it again. 
+* All debug messages have been commented out in all files, This make the console log look so much cleaner. 
+
+## 1.2.2 Change Log
 * With the introduction of Version 1.2.2, we are proud to introduce the Centralized Version of Rita with a One-Click Invite. This means you can still create your own personal RITA bot. Though now you have the option to forgo that personal setup and can instead use the Centralized version of RITA. Which has the added benefit of not requiring any of the setup steps required that you would have to do for your own personal RITA bot. Just invite the bot to your server and setup the bot to your liking.  
 * One-Click Invite Trial, We have decided to set up an extended trial of the Centralized Version of Rita. If you would like to take part and have access to the Centralized Version of RITA. Please join our discord for more info. https://discord.gg/AtJcjvnkg6
 
@@ -58,6 +110,7 @@
 * Fixed various issues.
 * Major code changes
 * Dev Dependencies core to this bot, the `google-translate-api` & `google-translate-token` & `gulp-watch` have been updated
+
 
 ## 1.2.1 
 * New commands added (embed, bot2bot, settings updatedb)

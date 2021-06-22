@@ -15,7 +15,7 @@ const cmdArgs = require("./commands/args");
 // --------------------
 
 // eslint-disable-next-line no-unused-vars
-module.exports = function run (config, message, edited, deleted)
+module.exports = function run (config, message)
 {
 
    module.exports.message = message;
@@ -91,7 +91,7 @@ module.exports = function run (config, message, edited, deleted)
 
       }
 
-      console.log(`--m.js--- Empty Message Error: ----1----\nServer: ${message.channel.guild.name},\nChannel: ${message.channel.id} - ${message.channel.name},\nMessage ID: ${message.id},\nContent: ${message.content},\nWas Image: ${message.attachments},\nwas Embed: ${message.embeds},\nSender: ${message.member.displayName} - ${message.member.id},\nTimestamp: ${message.createdAt}\n----------------------------------------`);
+      // console.log(`--m.js--- Empty Message Error: ----1----\nServer: ${message.channel.guild.name},\nChannel: ${message.channel.id} - ${message.channel.name},\nMessage ID: ${message.id},\nContent: ${message.content},\nWas Image: ${message.attachments},\nWas Embed: ${message.embeds},\nSender: ${message.member.displayName} - ${message.member.id},\nTimestamp: ${message.createdAt}\n----------------------------------------`);
 
    }
 
@@ -119,13 +119,13 @@ module.exports = function run (config, message, edited, deleted)
       if (message.embeds[0].description)
       {
 
-         message.content = message.embeds[0].description;
+         message.content = `${message.content}\n${message.embeds[0].description}`;
 
       }
       else if (message.content === "" || message.content === " ")
       {
 
-         console.log(`--m.js--- Empty Message Error: ----2----\nServer: ${message.channel.guild.name},\nChannel: ${message.channel.id} - ${message.channel.name},\nMessage ID: ${message.id},\nContent: ${message.content},\nWas Image: ${message.attachments},\nwas Embed: ${message.embeds},\nSender: ${message.member.displayName} - ${message.member.id},\nTimestamp: ${message.createdAt}\n----------------------------------------`);
+         // console.log(`--m.js--- Empty Message Error: ----2----\nServer: ${message.channel.guild.name},\nChannel: ${message.channel.id} - ${message.channel.name},\nMessage ID: ${message.id},\nContent: ${message.content},\nWas Image: ${message.attachments},\nwas Embed: ${message.embeds},\nSender: ${message.member.displayName} - ${message.member.id},\nTimestamp: ${message.createdAt}\n----------------------------------------`);
          return;
 
       }
@@ -186,6 +186,37 @@ module.exports = function run (config, message, edited, deleted)
 
    }
 
+   // ---------------------
+   // Blacklist Redundancy
+   // ---------------------
+   const serverID = data.message.guild.id;
+
+   db.getServerInfo(
+      serverID,
+      function getServerInfo (server)
+      {
+
+         if (server[0].blacklisted === true)
+         {
+
+            data.message.guild.leave();
+            console.log(`Blacklist Redundancy, Server ${serverID} ejected`);
+
+         }
+
+      }
+   ).catch((err) =>
+   {
+
+      console.log(
+         "error",
+         err,
+         "warning",
+         serverID
+      );
+
+   });
+
    // ------------------
    // Proccess Commands
    // ------------------
@@ -194,7 +225,7 @@ module.exports = function run (config, message, edited, deleted)
 
    {
 
-      if (message.content.startsWith(config.translateCmd) || message.content.startsWith(config.translateCmdShort) || message.mentions.has(bot.id))
+      if (message.content.startsWith(config.translateCmd) || message.content.startsWith(config.translateCmdShort) || message.content.startsWith(`<@${message.client.user.id}>`) || message.content.startsWith(`<@!${message.client.user.id}>`))
       {
 
          // eslint-disable-next-line consistent-return

@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 // -----------------
 // Global variables
 // -----------------
@@ -170,31 +171,82 @@ module.exports = function run (data)
       if (data.cmd.params && data.cmd.params.toLowerCase().includes("server"))
       {
 
-         data.text = `${serverStats}\n\n${serverTranslationStats}`;
-
-         // -------------
-         // Send message
-         // -------------
-
-         return sendMessage(data);
-
-      }
-
-      if (data.cmd.params && data.cmd.params.toLowerCase().includes("debug"))
-      {
-
-         Override: if (!process.env.DISCORD_BOT_OWNER_ID.includes(data.message.author.id))
+         if (!data.cmd.num)
          {
 
-            if (data.message.isAdmin === false)
+            data.text = `${serverStats}\n\n${serverTranslationStats}`;
+
+            // -------------
+            // Send message
+            // -------------
+
+            return sendMessage(data);
+
+         }
+         // eslint-disable-next-line no-unused-vars
+         const serverID = data.cmd.params.split(" ")[1].toLowerCase();
+         const target = data.client.guilds.cache.get(serverID);
+
+         db.getServerInfo(
+            serverID,
+            function getServerInfo (server)
             {
 
+               if (!target)
                {
 
-                  data.color = "warn";
+                  const targetServer = `**\`\`\`${serverID} - Server Tranlation Stats\`\`\`**\n` +
+                     `Server Joined Rita Network: \`\`\`${server[0].createdAt}\`\`\`\n` +
+                     `:bar_chart:  In total **\`${server[0].message}\`** messages in this server have been sent\n\n` +
+                     `:chart_with_upwards_trend:  RITA has translated **\`${server[0].translation}\`**  for this server\n\n` +
+                     `:frame_photo:  A total of **\`${server[0].images}\`**  images have been sent and **\`${server[0].gif}\`** Gif's have been shared\n\n` +
+                     `:flag_white:  **\`${server[0].react}\`**  messages have been translated with flag reactions \n\n` +
+                     `:notebook:  **\`${server[0].embedon}\`**  messages have been sent in **\`Embed On\`** format\n\n` +
+                     `:speech_balloon:  **\`${server[0].embedoff}\`**  messages have been sent in **\`Embed Off\`** format\n`;
+
+                  data.text = `${targetServer}\n\n`;
+
+                  // -------------
+                  // Send message
+                  // -------------
+
+                  return sendMessage(data);
 
                }
-               data.text = ":cop:  This command is reserved for server adminis.";
+               if (target.owner)
+               {
+
+                  const targetServer = `**\`\`\`${target.name} - Server Tranlation Stats\`\`\`**\n` +
+                  `Server Owner: ${target.owner}\n\n` +
+                  `Server Joined Rita Network: \`\`\`${server[0].createdAt}\`\`\`\n` +
+                  `:bar_chart:  In total **\`${server[0].message}\`** messages in this server have been sent\n\n` +
+                  `:chart_with_upwards_trend:  RITA has translated **\`${server[0].translation}\`**  for this server\n\n` +
+                  `:person_facepalming: Users in Server: **\`${target.memberCount}\`**\n\n` +
+                  `:frame_photo:  A total of **\`${server[0].images}\`**  images have been sent and **\`${server[0].gif}\`** Gif's have been shared\n\n` +
+                  `:flag_white:  **\`${server[0].react}\`**  messages have been translated with flag reactions \n\n` +
+                  `:notebook:  **\`${server[0].embedon}\`**  messages have been sent in **\`Embed On\`** format\n\n` +
+                  `:speech_balloon:  **\`${server[0].embedoff}\`**  messages have been sent in **\`Embed Off\`** format\n`;
+
+                  data.text = `${targetServer}\n\n`;
+
+               }
+               else if (!target.owner)
+               {
+
+                  const targetServer = `**\`\`\`${target.name} - Server Tranlation Stats\`\`\`**\n` +
+                  `Server Owner: Unable to get this information.\n\n` +
+                  `Server Joined Rita Network: \`\`\`${server[0].createdAt}\`\`\`\n` +
+                  `:bar_chart:  In total **\`${server[0].message}\`** messages in this server have been sent\n\n` +
+                  `:chart_with_upwards_trend:  RITA has translated **\`${server[0].translation}\`**  for this server\n\n` +
+                  `:person_facepalming: Users in Server: **\`${target.memberCount}\`**\n\n` +
+                  `:frame_photo:  A total of **\`${server[0].images}\`**  images have been sent and **\`${server[0].gif}\`** Gif's have been shared\n\n` +
+                  `:flag_white:  **\`${server[0].react}\`**  messages have been translated with flag reactions \n\n` +
+                  `:notebook:  **\`${server[0].embedon}\`**  messages have been sent in **\`Embed On\`** format\n\n` +
+                  `:speech_balloon:  **\`${server[0].embedoff}\`**  messages have been sent in **\`Embed Off\`** format\n`;
+
+                  data.text = `${targetServer}\n\n`;
+
+               }
 
                // -------------
                // Send message
@@ -203,7 +255,45 @@ module.exports = function run (data)
                return sendMessage(data);
 
             }
-            break Override;
+         ).catch((err) =>
+         {
+
+            console.log(
+               "error",
+               err,
+               "warning",
+               serverID
+            );
+
+            data.text = `\`\`\`${serverID} is not registered in the database.\n\n\`\`\``;
+            return sendMessage(data);
+
+         });
+
+      }
+
+      if (data.cmd.params && data.cmd.params.toLowerCase().includes("debug"))
+      {
+
+         AreDev: if (!process.env.DISCORD_BOT_OWNER_ID.includes(data.message.author.id))
+         {
+
+            if (auth.devID.includes(data.message.author.id))
+            {
+
+               // console.log("DEBUG: Developer ID Confirmed");
+               break AreDev;
+
+            }
+
+            data.color = "warn";
+            data.text = ":cop:  This command is reserved for bot owners.";
+
+            // -------------
+            // Send message
+            // -------------
+
+            return sendMessage(data);
 
          }
 
@@ -217,13 +307,18 @@ module.exports = function run (data)
 
       }
 
-      data.text = `${globalStats}\n\n${serverStats}`;
+      if (!data.cmd.params)
+      {
 
-      // -------------
-      // Send message
-      // -------------
+         data.text = `${globalStats}\n\n${serverStats}`;
 
-      return sendMessage(data);
+         // -------------
+         // Send message
+         // -------------
+
+         return sendMessage(data);
+
+      }
 
    });
 

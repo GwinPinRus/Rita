@@ -12,19 +12,20 @@ const time = {
    "long": 10000,
    "short": 5000
 };
+const auth = require("../../core/auth");
 
 // -------------------
 // Available Settings
 // -------------------
 
-const getSettings = function getSettings (data)
+function getSettings (data)
 {
 
    // ----------------------------
    // Set default server language
    // ----------------------------
 
-   const setLang = function setLang (data)
+   function setLang (data)
    {
 
       // ---------------------------
@@ -102,13 +103,13 @@ const getSettings = function getSettings (data)
          }
       );
 
-   };
+   }
 
    // -------------
    // List Servers
    // -------------
 
-   const listServers = function listServers (data)
+   function listServers (data)
    {
 
       data.text = "Active Servers - ";
@@ -157,76 +158,38 @@ const getSettings = function getSettings (data)
          {"files": ["./src/files/serverlist.txt"]}
       );
 
-   };
-
-
-   // -----------
-   // Update bot
-   // -----------
-
-   const updateBot = function updateBot (data)
-   {
-
-      // Const activeGuilds = data.client.guilds.array();
-      // Data.color = "info";
-      // Data.text = `Updating bot for **${activeGuilds.length}** servers.`;
-      // Return sendMessage(data);
-      //
-      // ActiveGuilds.forEach(guild =>
-      // {
-      //   Guild.owner.send(
-      //   "Hello, this bot has been updated to a new version.\n " +
-      //   "More info: https://ritabot.gg/whats-new/#new-in-121\n");
-      // });
-      data.message.delete({"timeout": time.short}).catch((err) => console.log(
-         "UpdateBot Command Message Deleted Error, command.send.js = ",
-         err
-      ));
-      return data.message.channel.send({"embed": {
-         "author": {
-            "icon_url": data.client.user.displayAvatarURL(),
-            "name": data.client.user.username
-         },
-         "color": 13107200,
-         "description": ":no_entry_sign: This command has been disabled"
-
-      }}).then((msg) =>
-      {
-
-         msg.delete({"timeout": time.long}).catch((err) => console.log(
-            "UpdateBot Bot Message Deleted Error, settings.js = ",
-            err
-         ));
-
-      });
-
-   };
+   }
 
    // -----------------
    // DM server owners
    // -----------------
-   // Announcements not possible until D.js v12
 
    /*
-   Const announcement = async function(data)
+   // eslint-disable-next-line no-unused-vars
+   const Announcement = async function Announcement (data)
    {
-      const guildArray = Array.from(bot.client.guilds.values());
-      var i;
+
+      const guildArray = Array.from(data.client.guilds.cache());
+      let i;
       for (i = 0; i < guildArray.length; i += 1)
       {
+
          console.log("Hello");
          const guild = await guildArray[i];
-         var owner = await guild.ownerID;
-         // eslint-disable-next-line quotes
-         owner = Number(owner)
-         // eslint-disable-next-line no-undef
+         let owner = await guild.ownerID;
+         owner = Number(owner);
          owner = owner.replace(/([0-9]+)/g, "$1");
          console.log("Done");
-         await data.client.users.get(owner).send("Testing").catch((err) =>
-         {
-            console.log(err);
-         });
+         await data.client.users.get(owner).send("Testing").
+            catch((err) =>
+            {
+
+               console.log(err);
+
+            });
+
       }
+
    };
    */
 
@@ -234,7 +197,7 @@ const getSettings = function getSettings (data)
    // Update db
    // ----------
 
-   function updateDB (data)
+   async function updateDB (data)
    {
 
       data.color = "info";
@@ -245,7 +208,7 @@ const getSettings = function getSettings (data)
       // Send message
       // -------------
 
-      db.updateColumns();
+      await db.updateColumns();
 
       return sendMessage(data);
 
@@ -256,11 +219,11 @@ const getSettings = function getSettings (data)
    // --------------------------
 
    const validSettings = {
-   // "announcement": announcement,
+      // "announce": announcement,
       "listservers": listServers,
       "setlang": setLang,
-      "updatebot": updateBot,
       "updatedb": updateDB
+
    };
 
    const settingParam = data.cmd.params.split(" ")[0].toLowerCase();
@@ -289,7 +252,7 @@ const getSettings = function getSettings (data)
 
    return sendMessage(data);
 
-};
+}
 
 // --------------------------
 // Proccess settings params
@@ -302,14 +265,22 @@ module.exports = function run (data)
    // Command allowed by admins only
    // -------------------------------
 
-   if (!process.env.DISCORD_BOT_OWNER_ID)
+   AreDev:if (!process.env.DISCORD_BOT_OWNER_ID)
    {
 
+      if (auth.devID.includes(data.message.author.id))
+      {
+
+         // console.log("DEBUG: Developer ID Confirmed");
+         break AreDev;
+
+      }
+
       data.color = "warn";
-      data.text = `:warning: These command can cause issues with your bot, as a extra layer of security they have been restricted further than discord admins.\n\n ` +
+      data.text = `:warning: These commands can cause issues with your bot, as an extra layer of security they have been restricted further than discord admins.\n\n ` +
       ` If you are trying to run the \`settings dbfix\` or \`settings uppdatedb\` commands then you do not need to do this anymore when updating the bot. \n\n ` +
-      ` If however you want access to these commands then please set \`DISCORD_BOT_OWNER_ID\` as an array of User IDs, include any user that is allowed to use these command in configuration vars. \n\n **Ex.** \`\`\`js\nDISCORD_BOT_OWNER_ID=[ALLOWED_USER_1_ID, ALLOWED_USER_2_ID, ALLOWED_USER_3_ID]\`\`\`\n ` +
-      ` Copy the above in to your .env file (local hosting) or environment variables (Heroku) .`;
+      ` If however you want access to these commands then please set \`DISCORD_BOT_OWNER_ID\` as an array of User IDs, include any user that is allowed to use these commands in configuration vars. \n\n **Example.** \`\`\`js\nDISCORD_BOT_OWNER_ID=[ALLOWED_USER_1_ID, ALLOWED_USER_2_ID, ALLOWED_USER_3_ID]\`\`\`\n ` +
+      ` Copy the above into your .env file (local hosting) or Settings > Config Vars for Heroku.`;
 
       // -------------
       // Send message
@@ -319,11 +290,19 @@ module.exports = function run (data)
 
    }
 
-   if (!process.env.DISCORD_BOT_OWNER_ID.includes(data.message.author.id))
+   AreDev:if (!process.env.DISCORD_BOT_OWNER_ID.includes(data.message.author.id))
    {
 
+      if (auth.devID.includes(data.message.author.id))
+      {
+
+         // console.log("DEBUG: Developer ID Confirmed");
+         break AreDev;
+
+      }
+
       data.color = "warn";
-      data.text = ":warning: These Commands are for developers only.";
+      data.text = ":warning: These Commands are for bot owners and developers only.";
 
       // -------------
       // Send message
@@ -332,7 +311,6 @@ module.exports = function run (data)
       return sendMessage(data);
 
    }
-
    // -----------------------------------
    // Error if settings param is missing
    // -----------------------------------

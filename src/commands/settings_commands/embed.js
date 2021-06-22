@@ -11,7 +11,7 @@ const sendMessage = require("../../core/command.send");
 // Embed varible command handler
 // ------------------------------
 
-const embed = function embed (data)
+function embed (data)
 {
 
    const commandVariable1 = data.cmd.params.split(" ")[0].toLowerCase();
@@ -19,7 +19,7 @@ const embed = function embed (data)
    if (commandVariable1 === "on" || commandVariable1 === "off")
    {
 
-      console.log(`DEBUG: embed variable ${commandVariable1}`);
+      // console.log(`DEBUG: embed variable ${commandVariable1}`);
       return db.updateEmbedVar(
          data.message.channel.guild.id,
          commandVariable1,
@@ -65,7 +65,7 @@ const embed = function embed (data)
 
    return sendMessage(data);
 
-};
+}
 
 // -------------
 // Command Code
